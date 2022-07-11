@@ -1,0 +1,15 @@
+---
+
+database:
+  address: 192.168.1.200
+  user: moviebot
+  password: password
+  database: moviebot
+
+bot:
+  server: Server
+  channel: #bot-testing
+
+web:
+  server: 127.0.0.1:9999
+  
