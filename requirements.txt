@@ -1,0 +1,6 @@
+black
+pylint
+bandit
+safety
+
+-e .

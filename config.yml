@@ -1,7 +1,8 @@
 ---
 
 database:
-  address: 192.168.1.200
+  host: 192.168.1.200
+  port: 5432
   user: moviebot
   password: password
   database: moviebot

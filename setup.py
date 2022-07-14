@@ -9,4 +9,12 @@ setup(
     author='Harvey Frye',
     url='https://www.github.com/HLFrye/moviebot',
     packages=['moviebot', 'moviebot.bot', 'moviebot.web'],
+    install_requires=[
+        "pyyaml",
+        "asyncpg",
+        "discord.py",
+    ],
+    entry_points = {
+        'console_scripts': ['bot-run=moviebot.bot.main:main'],        
+    }
 )
