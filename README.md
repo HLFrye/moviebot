@@ -2,15 +2,19 @@ So! Fun idea. A Discord bot and web page
 
 Bot side:
 
-Connect to configured channel and server
-Listen for messages:
+Features:
+ [+] Connect to configured channel and server
+ [+] Scan configured channel for past, missed votes
+ [+] Handle !watchwith message
+ [ ] Handle !remove movie
+ [ ] Watch configured channel for new suggestions and votes
+ [ ] Show image from Wikipedia for show
+ [ ] Show description from Wikipedia for show
+ [ ] Show Rotten Tomatoes scores
 
-* `!add <movie or show>` - adds a movie to the database and creates a vote for it
-* `!pick @UserName1 @UserName2` - picks a random show
-* `!remove <movie or show>` - removes a movie for consideration
 
-Web side
+Web side:
+ [ ] Option to vote on shows
+ [ ] Option to choose show by clicking avatars
 
-* Select the profile pic of people watching show
-* Button to choose a show
 
