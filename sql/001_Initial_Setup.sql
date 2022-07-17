@@ -1,10 +1,6 @@
 CREATE TABLE Users (
     user_id bigint PRIMARY KEY,
-    avatar_url text,
     display_name text,
-    avatar text,
-    default_avatar text,
-    default_avatar_url text,
     guild text,
     name text,
     nick text    
@@ -12,7 +8,7 @@ CREATE TABLE Users (
 
 CREATE TABLE Shows (
     show_id SERIAL PRIMARY KEY,
-    name text,
+    name text UNIQUE,
     show_image_url text,
     removed boolean DEFAULT FALSE
 );
@@ -20,7 +16,8 @@ CREATE TABLE Shows (
 CREATE TABLE Votes (
     user_id bigint REFERENCES Users(user_id),
     show_id int REFERENCES Shows(show_id),
-    interested boolean
+    interested boolean,
+    UNIQUE (user_id, show_id)
 );
 
 CREATE TABLE IF NOT EXISTS Token(
