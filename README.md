@@ -6,6 +6,7 @@ Features:
  [+] Connect to configured channel and server
  [+] Scan configured channel for past, missed votes
  [+] Handle !watchwith message
+ [+] If movie suggestion rejected, suggest another for the same group
  [ ] Handle !remove movie
  [ ] Watch configured channel for new suggestions and votes
  [ ] Show image from Wikipedia for show

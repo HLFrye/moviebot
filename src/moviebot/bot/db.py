@@ -45,10 +45,49 @@ SET
 """
 
 CHOOSE_SHOW_SQL = """
-SELECT s.name
+SELECT s.name, s.show_id
 FROM shows s
 JOIN votes v ON v.show_id = s.show_id AND interested
-GROUP BY 1
+GROUP BY 1, 2
 HAVING array_agg(v.user_id) @> ($1)
 AND array_agg(v.user_id) <@ ($1)
+"""
+
+CHOOSE_SHOW_SQL_WITH_EXCLUDES = """
+SELECT s.name, s.show_id
+FROM shows s
+JOIN votes v ON v.show_id = s.show_id AND interested
+WHERE NOT s.show_id = any($2::int[])
+GROUP BY 1, 2
+HAVING array_agg(v.user_id) @> ($1)
+AND array_agg(v.user_id) <@ ($1)
+"""
+
+SAVE_RECOMMENDATION_SQL = """
+INSERT INTO recommendation
+(message_id, user_ids, show_id, rejected, parent_message_id)
+VALUES
+($1, $2, $3, False, $4)
+"""
+
+GET_RECOMMENDATION_SQL = """
+SELECT user_ids, show_id
+FROM recommendation
+WHERE message_id = $1
+"""
+
+SET_REJECTED_SQL = """
+UPDATE recommendation
+SET rejected = True
+WHERE message_id = $1
+"""
+
+GET_PARENT_SQL = """
+SELECT 
+    message_id,
+    show_id,
+    parent_message_id,
+    user_ids
+FROM recommendation
+WHERE message_id = $1
 """

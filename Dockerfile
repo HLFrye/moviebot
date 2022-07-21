@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 COPY setup.py setup.py
-COPY moviebot moviebot
+COPY dist/Moviebot-0.1-py3-none-any.whl Moviebot-0.1-py3-none-any.whl
 COPY config.yml config.yml
 
 RUN apk update && apk add python3-dev \
@@ -12,6 +12,6 @@ RUN apk update && apk add python3-dev \
                         libc-dev
 
 RUN python3 -m venv env
-RUN /app/env/bin/pip3 install -r requirements.txt
+RUN /app/env/bin/pip3 install ./Moviebot-0.1-py3-none-any.whl
 
 CMD [ "/app/env/bin/bot-run", "./config.yml" ]
