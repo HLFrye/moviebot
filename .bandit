@@ -1,0 +1,3 @@
+[bandit]
+skips: B311
+exclude: ./sql,./env,./dist,./Moviebot.egg-info

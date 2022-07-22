@@ -1,3 +1,7 @@
+"""
+This module contains SQL queries used by the bot
+"""
+
 CREATE_MEMBER_SQL = """
 INSERT INTO Users (
     user_id, 
@@ -20,7 +24,7 @@ SET
     guild = EXCLUDED.guild,
     name = EXCLUDED.name,
     nick = EXCLUDED.nick
-"""    
+"""
 
 CREATE_SHOW_SQL = """
 INSERT INTO Shows (name) VALUES ($1) 
