@@ -3,20 +3,20 @@ So! Fun idea. A Discord bot and web page
 Bot side:
 
 Features:
- [+] Connect to configured channel and server
- [+] Scan configured channel for past, missed votes
- [+] Handle !watchwith message
- [+] If movie suggestion rejected, suggest another for the same group
- [ ] Handle !remove movie
- [ ] Watch configured channel for new suggestions and votes
- [ ] Show image from Wikipedia for show
- [ ] Show description from Wikipedia for show
- [ ] Show Rotten Tomatoes scores
+- [X] Connect to configured channel and server
+- [X] Scan configured channel for past, missed votes
+- [X] Handle !watchwith message
+- [X] If movie suggestion rejected, suggest another for the same group
+- [ ] Handle !remove movie
+- [ ] Watch configured channel for new suggestions and votes
+- [ ] Show image from Wikipedia for show
+- [ ] Show description from Wikipedia for show
+- [ ] Show Rotten Tomatoes scores
 
 
 Web side:
- [ ] Option to vote on shows
- [ ] Option to choose show by clicking avatars
+- [ ] Option to vote on shows
+- [ ] Option to choose show by clicking avatars
 
 Build procedure:
 Note, at the moment this is a personal project, and is not simple to build or use. There are hardcoded channel IDs and stuff like that. Really not ready for use yet by anyone but me. And since I'm the main target for this application, it may never be. You have been warned :)
