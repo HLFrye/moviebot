@@ -6,32 +6,34 @@ asynchronously starts the bot client.
 """
 
 import asyncio
-import argparse
+import os
 
 import asyncpg
-import yaml
+from dotenv import load_dotenv
 
 from .client import MovieBotClient
 
 
-async def start(config):
+async def start():
     """
     Asynchronously start the bot client after connecting to the database
     to load the bot's token
     """
 
     # connect to database
-    pool = await asyncpg.create_pool(**config["database"])
+    pool = await asyncpg.create_pool(
+        host=os.environ["DATABASE_ADDRESS"],
+        port=os.environ["DATABASE_PORT"],
+        user=os.environ["DATABASE_USER"],
+        password=os.environ["DATABASE_PASSWORD"],
+        database=os.environ["DATABASE_NAME"],
+    )
 
     # create bot
     client = MovieBotClient(pool)
 
-    # look up client token from DB
-    async with pool.acquire() as conn:
-        token = await conn.fetchval("SELECT token FROM Token")
-
     # run forever
-    await client.start(token)
+    await client.start(os.environ["BOT_TOKEN"])
 
 
 def main():
@@ -39,14 +41,9 @@ def main():
     Main entrypoint for bot application
     """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config")
-    args = parser.parse_args()
+    load_dotenv()
 
-    with open(args.config, encoding="utf-8") as config_file:
-        config = yaml.safe_load(config_file)
-
-    asyncio.run(start(config))
+    asyncio.run(start())
 
 
 if __name__ == "__main__":

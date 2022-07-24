@@ -10,9 +10,9 @@ setup(
     url='https://www.github.com/HLFrye/moviebot',
     packages=['moviebot', 'moviebot.bot', 'moviebot.web'],
     install_requires=[
-        "pyyaml==6.0",
         "asyncpg==0.26.0",
         "discord.py==1.7.3",
+        "python-dotenv==0.20.0",
     ],
     entry_points = {
         'console_scripts': ['bot-run=moviebot.bot.main:main'],        

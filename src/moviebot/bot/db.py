@@ -95,3 +95,18 @@ SELECT
 FROM recommendation
 WHERE message_id = $1
 """
+
+SEARCH_SHOW_SQL = """
+SELECT
+    show_id,
+    name
+FROM shows
+WHERE name ILIKE $1
+"""
+
+MARK_SHOW_REMOVED = """
+UPDATE shows
+SET
+    removed = true
+WHERE show_id = $1
+"""

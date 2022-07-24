@@ -2,7 +2,10 @@
 Discord bot client implementation
 """
 
+import os
 import random
+from enum import Enum
+
 import discord
 from .db import (
     CREATE_MEMBER_SQL,
@@ -14,6 +17,8 @@ from .db import (
     CHOOSE_SHOW_SQL_WITH_EXCLUDES,
     SET_REJECTED_SQL,
     GET_PARENT_SQL,
+    SEARCH_SHOW_SQL,
+    MARK_SHOW_REMOVED,
 )
 
 
@@ -63,23 +68,123 @@ class MovieBotClient(discord.Client):
             return shows[choice]
 
     async def on_message(self, message):
-        """Handles receipt of messages from Discord"""
+        """
+        Handles receipt of messages from Discord
 
-        if message.channel.id == 738255420388278347:
-            if message.content.startswith("!watchwith"):
-                user_ids = [u.id for u in message.mentions] + [message.author.id]
-                choice = await self.get_recommendation_for_users(user_ids)
-                sent = await message.channel.send(
-                    content=f"You should watch {choice['name']}"
-                )
-                async with self.pool.acquire() as conn:
-                    await conn.execute(
-                        SAVE_RECOMMENDATION_SQL,
-                        sent.id,
-                        user_ids,
-                        choice["show_id"],
-                        None,
+        This should be a simple router to handlers for
+        specific types of messages
+        """
+
+        class ChannelType(Enum):
+            """
+            Enumeration of channel types, used
+            in place of specific channel names
+            """
+
+            COMMANDS_CHANNEL = 1
+            REQUESTS_CHANNEL = 2
+
+        def channel_type(name):
+            """
+            Determines channel type given a channel name, using the
+            COMMANDS_CHANNEL and REQUESTS_CHANNEL env variables
+
+            This is a placeholder implementation until I need better
+            multi-channel support
+            """
+            if name in os.environ["COMMANDS_CHANNEL"]:
+                return ChannelType.COMMANDS_CHANNEL
+            if name in os.environ["REQUESTS_CHANNEL"]:
+                return ChannelType.REQUESTS_CHANNEL
+            return None
+
+        def extract_command(content):
+            """Extract the command from message content, if present"""
+            cmd = content.split(" ")[0]
+            if cmd.startswith("!"):
+                return cmd
+            return None
+
+        match (channel_type(message.channel.name), extract_command(message.content)):
+            case (ChannelType.COMMANDS_CHANNEL, "!watchwith"):
+                await self.handle_watchwith(message)
+            case (ChannelType.COMMANDS_CHANNEL, "!remove"):
+                await self.handle_remove(message)
+
+    async def handle_remove(self, message):
+        """
+        Look for a match of the title, and mark that entry removed
+
+        If no exact match is found, present options that were close
+        """
+
+        command_length = len("!remove")
+        search_term = message.content[command_length + 1 :]
+        async with self.pool.acquire() as conn:
+            results = await conn.fetch(SEARCH_SHOW_SQL, "%" + search_term + "%")
+            match len(results):
+                case 0:
+                    return await self.respond_show_not_found(
+                        message.channel, search_term
                     )
+                case 1:
+                    await self.mark_show_removed(results[0])  #
+                    return await self.respond_show_removed(message.channel, results[0])
+                case _:
+                    return await self.respond_found_multiple_shows(
+                        message.channel, search_term, results
+                    )
+
+    async def respond_found_multiple_shows(self, channel, search_term, results):
+        """
+        Response to send when a search request finds multiple shows
+        """
+        found_names = [result["name"] for result in results]
+        found_names_content = "\n".join(found_names)
+        await channel.send(
+            content=f"""
+Sorry, I found multiple shows with a similar title to "{search_term}", maybe you meant one of the following?
+
+{found_names_content}
+
+If you try the !remove command with one of those, I can remove it
+"""
+        )
+
+    async def respond_show_removed(self, channel, show_record):
+        """Response to send after removing a show"""
+        await channel.send(content=f"Successfully removed show {show_record['name']}")
+
+    async def mark_show_removed(self, show_record):
+        """Method to set a show to removed in the database"""
+        async with self.pool.acquire() as conn:
+            await conn.execute(MARK_SHOW_REMOVED, show_record["show_id"])
+
+    async def respond_show_not_found(self, channel, search_term):
+        """Response to send if a searched for show is not found"""
+        await channel.send(
+            content=f"Sorry, I couldn't find any show named '{search_term}'"
+        )
+
+    async def handle_watchwith(self, message):
+        """
+        Handles the !watchwith command
+
+        This command looks for a show in the database having the
+        same interested list as requested, and return a random
+        one of those
+        """
+        user_ids = [u.id for u in message.mentions] + [message.author.id]
+        choice = await self.get_recommendation_for_users(user_ids)
+        sent = await message.channel.send(content=f"You should watch {choice['name']}")
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                SAVE_RECOMMENDATION_SQL,
+                sent.id,
+                user_ids,
+                choice["show_id"],
+                None,
+            )
 
     async def on_ready(self):
         """Called when the bot is connected to Discord"""
