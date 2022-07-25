@@ -8,7 +8,7 @@ Features:
 - [X] Handle !watchwith message
 - [X] If movie suggestion rejected, suggest another for the same group
 - [X] Update configuration - use environment settings
-- [] Remove hardcoded channel settings
+- [X] Remove hardcoded channel settings
 - [X] Handle !remove movie
 - [ ] Watch configured channel for new suggestions and votes
 - [ ] Show image from Wikipedia for show
