@@ -10,7 +10,7 @@ Features:
 - [X] Update configuration - use environment settings
 - [X] Remove hardcoded channel settings
 - [X] Handle !remove movie
-- [ ] Watch configured channel for new suggestions and votes
+- [X] Watch configured channel for new suggestions and votes
 - [ ] Show image from Wikipedia for show
 - [ ] Show description from Wikipedia for show
 - [ ] Show Rotten Tomatoes scores
@@ -20,6 +20,7 @@ Features:
 Web side:
 - [ ] Option to vote on shows
 - [ ] Option to choose show by clicking avatars
+- [ ] Wheel of shows!
 
 Configuration:
 The following environment variables control the behavior of the bot:
