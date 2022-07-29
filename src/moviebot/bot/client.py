@@ -2,15 +2,13 @@
 Discord bot client implementation
 """
 
-import os
 import random
-from enum import Enum
 
 import discord
 from .db import (
     CREATE_MEMBER_SQL,
-    #     CREATE_SHOW_SQL,
-    #     ADD_VOTE_SQL,
+    CREATE_SHOW_SQL,
+    ADD_VOTE_SQL,
     CHOOSE_SHOW_SQL,
     SAVE_RECOMMENDATION_SQL,
     GET_RECOMMENDATION_SQL,
@@ -19,6 +17,10 @@ from .db import (
     GET_PARENT_SQL,
     SEARCH_SHOW_SQL,
     MARK_SHOW_REMOVED,
+)
+from .channel import (
+    ChannelType,
+    channel_type,
 )
 
 
@@ -41,6 +43,15 @@ class MovieBotClient(discord.Client):
 
         super().__init__(intents=intents)
         self.pool = pool
+
+    async def on_member_join(self, member):
+        """
+        Called when a member joins the server
+        Saves the members info into the DB
+        """
+
+        async with self.pool.acquire() as conn:
+            await save_member_info(conn, member)
 
     async def get_recommendation_for_users(self, user_ids, reject_ids=None):
         """
@@ -74,29 +85,6 @@ class MovieBotClient(discord.Client):
         This should be a simple router to handlers for
         specific types of messages
         """
-
-        class ChannelType(Enum):
-            """
-            Enumeration of channel types, used
-            in place of specific channel names
-            """
-
-            COMMANDS_CHANNEL = 1
-            REQUESTS_CHANNEL = 2
-
-        def channel_type(name):
-            """
-            Determines channel type given a channel name, using the
-            COMMANDS_CHANNEL and REQUESTS_CHANNEL env variables
-
-            This is a placeholder implementation until I need better
-            multi-channel support
-            """
-            if name in os.environ["COMMANDS_CHANNEL"]:
-                return ChannelType.COMMANDS_CHANNEL
-            if name in os.environ["REQUESTS_CHANNEL"]:
-                return ChannelType.REQUESTS_CHANNEL
-            return None
 
         def extract_command(content):
             """Extract the command from message content, if present"""
@@ -189,18 +177,6 @@ If you try the !remove command with one of those, I can remove it
     async def on_ready(self):
         """Called when the bot is connected to Discord"""
 
-        async def save_member_info(conn, member):
-            """Helper func to save user info to the database"""
-            print(f"Storing info for member {member.display_name}")
-            await conn.execute(
-                CREATE_MEMBER_SQL,
-                member.id,
-                member.display_name,
-                member.guild.name,
-                member.name,
-                member.nick,
-            )
-
         print(f"{self.user.name} has connected to Discord")
 
         # Get the guilds the bot is in (should be just 1)
@@ -210,20 +186,31 @@ If you try the !remove command with one of those, I can remove it
             async for member in guild.fetch_members():
                 await save_member_info(conn, member)
 
-            # channel = guild.get_channel(981962732913950781)
-            # async for message in channel.history():
-            #     if len(message.reactions) > 0:
-            #         print(f"Movie: {message.content}")
-            #         show_id = await conn.fetchval(CREATE_SHOW_SQL, message.content)
-            #         print(f"Suggestor: {message.author.id}")
-            #         await conn.execute(ADD_VOTE_SQL, message.author.id, show_id, True)
-            #         for reaction in message.reactions:
-            #             if reaction.emoji == '👍':
-            #                 async for user in reaction.users():
-            #                     await conn.execute(ADD_VOTE_SQL, user.id, show_id, True)
-            #             if reaction.emoji == '👎':
-            #                 async for user in reaction.users():
-            #                     await conn.execute(ADD_VOTE_SQL, user.id, show_id, False)
+            channels = await guild.fetch_channels()
+            request_channels = filter(
+                lambda x: channel_type(x.name) == ChannelType.REQUESTS_CHANNEL, channels
+            )
+
+            for channel in request_channels:
+                async for message in channel.history():
+                    if len(message.reactions) > 0:
+                        print(f"Movie: {message.content}")
+                        show_id = await conn.fetchval(CREATE_SHOW_SQL, message.content)
+                        print(f"Suggestor: {message.author.id}")
+                        await conn.execute(
+                            ADD_VOTE_SQL, message.author.id, show_id, True
+                        )
+                        for reaction in message.reactions:
+                            if reaction.emoji == "👍":
+                                async for user in reaction.users():
+                                    await conn.execute(
+                                        ADD_VOTE_SQL, user.id, show_id, True
+                                    )
+                            if reaction.emoji == "👎":
+                                async for user in reaction.users():
+                                    await conn.execute(
+                                        ADD_VOTE_SQL, user.id, show_id, False
+                                    )
 
     async def on_raw_reaction_add(self, payload):
         """
@@ -233,12 +220,22 @@ If you try the !remove command with one of those, I can remove it
 
         print(f"Received raw reaction {payload.emoji}")
         print(payload)
-        if payload.channel_id == 738255420388278347:
-            if payload.emoji.name == "👎":
-                channel = self.get_channel(payload.channel_id)
-                # user = self.get_user(payload.user_id)
-                message = await channel.fetch_message(payload.message_id)
+
+        channel = self.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        user = await self.fetch_user(payload.user_id)
+
+        match (channel_type(channel.name), payload.emoji.name):
+            case (ChannelType.COMMANDS_CHANNEL, "👎"):
                 await self.handle_recommendation_rejection(message)
+            case (ChannelType.REQUESTS_CHANNEL, "👍" | "👎"):
+                await self.handle_vote(message, user, payload.emoji.name == "👍")
+
+    async def handle_vote(self, message, user, interested):
+        """Records a user's vote on a show"""
+        async with self.pool.acquire() as conn:
+            show_id = await conn.fetchval(CREATE_SHOW_SQL, message.content)
+            await conn.execute(ADD_VOTE_SQL, user.id, show_id, interested)
 
     async def handle_recommendation_rejection(self, message):
         """Used to find a new recommendation when a previous one is rejected"""
@@ -296,3 +293,16 @@ If you try the !remove command with one of those, I can remove it
                 message.id,
             )
             print("Done")
+
+
+async def save_member_info(conn, member):
+    """Helper func to save user info to the database"""
+    print(f"Storing info for member {member.display_name}")
+    await conn.execute(
+        CREATE_MEMBER_SQL,
+        member.id,
+        member.display_name,
+        member.guild.name,
+        member.name,
+        member.nick,
+    )
