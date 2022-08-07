@@ -6,7 +6,8 @@ COPY dist/Moviebot-0.1-py3-none-any.whl Moviebot-0.1-py3-none-any.whl
 
 RUN apk update && apk add python3-dev \
                         gcc \
-                        libc-dev
+                        libc-dev \
+                        git
 
 RUN python3 -m venv env
 RUN /app/env/bin/pip3 install ./Moviebot-0.1-py3-none-any.whl
