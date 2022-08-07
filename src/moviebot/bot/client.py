@@ -22,6 +22,7 @@ from .channel import (
     ChannelType,
     channel_type,
 )
+from .show_info import get_show_info
 
 
 class MovieBotClient(discord.Client):
@@ -98,6 +99,35 @@ class MovieBotClient(discord.Client):
                 await self.handle_watchwith(message)
             case (ChannelType.COMMANDS_CHANNEL, "!remove"):
                 await self.handle_remove(message)
+            case (ChannelType.COMMANDS_CHANNEL, "!show_info"):
+                await self.handle_show_info(message)
+
+    async def handle_show_info(self, message):
+        """
+        Handles the !show_info command
+        Searches for what the uesr requested on IMDB,
+        and sends the info to the channel the message
+        came from
+        """
+
+        search_term = message.content[len("!show_info") + 1 :]
+        await self.send_show_info(message.channel, search_term)
+
+    async def send_show_info(self, channel, search_term):
+        """
+        Searches IMDB for the search term, and sends a rich
+        message to the channel requested
+        """
+
+        info = await get_show_info(search_term)
+        print(info)
+        embed = discord.Embed(
+            description=info["outline"],
+        )
+        embed.set_image(url=info["img_url"])
+        await channel.send(
+            embed=embed,
+        )
 
     async def handle_remove(self, message):
         """

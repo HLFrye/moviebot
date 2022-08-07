@@ -14,7 +14,7 @@ class ChannelType(Enum):
     """
 
     COMMANDS_CHANNEL = 1
-    REQUESTS_CHANNEL = 2 # TODO: Rename to SUGGESTIONS_CHANNEL
+    REQUESTS_CHANNEL = 2  # TODO: Rename to SUGGESTIONS_CHANNEL
 
 
 def channel_type(name):

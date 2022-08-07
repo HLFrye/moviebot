@@ -1,7 +1,8 @@
-black
-pylint
-bandit
-safety
-build
+--use-feature=fast-deps
+black==22.6.0
+pylint==2.14.5
+bandit==1.7.4
+safety==2.1.1
+build==0.8.0
 
 -e .
